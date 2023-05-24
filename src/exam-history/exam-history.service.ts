@@ -144,7 +144,10 @@ export class ExamHistoryService {
     }
 
     const { examId } = createExamHistoryDto;
-    const exam = await this.examService.findOne(examId);
+    let exam:any = null
+    if(examId){
+      exam = await this.examService.findOne(examId);
+    }
     const title = examId ? exam.title : 'Đề thi ngẫu nhiên';
 
     const response = await new this.model({
@@ -155,14 +158,16 @@ export class ExamHistoryService {
       status: 'ACTIVE',
     }).save();
 
-    await this.examService.update(
-      examId,
-      {
-        numOfUse: exam.numOfUse + 1,
-        updatedAt: dayjs().valueOf(),
-      },
-      { isInternal: true },
-    );
+    if(exam){
+      await this.examService.update(
+        examId,
+        {
+          numOfUse: exam.numOfUse + 1,
+          updatedAt: dayjs().valueOf(),
+        },
+        { isInternal: true },
+      );
+    }
 
     return response;
   }
