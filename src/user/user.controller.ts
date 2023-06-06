@@ -54,7 +54,10 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard)
   @Post('change-password')
-  async changePassword(@Body() data: { password: string }, @Request() req) {
+  async changePassword(
+    @Body() data: { oldPassword: string; newPassword: string },
+    @Request() req,
+  ) {
     return await this.service.changePassword(data, req.user);
   }
 

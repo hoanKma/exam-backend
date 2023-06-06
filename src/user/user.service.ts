@@ -15,7 +15,9 @@ import { Model } from 'mongoose';
 import { AES_SECRET_KEY_PASSWORD } from 'src/constant';
 import {
   FOLLOW_IDS_IS_REQUIRED,
+  NEW_PASSWORD_MUST_BE_DIFFERENT_OLD_PASSWORD,
   NO_EXECUTE_PERMISSION,
+  OLD_PASSWORD_IS_NOT_CORRECT,
   PASSWORD_IS_REQUIRED,
   USER_ALREADY_EXISTS,
 } from 'src/constant/response-code';
@@ -290,16 +292,26 @@ export class UserService {
   }
 
   async changePassword(
-    data: { password: string },
+    data: { oldPassword: string; newPassword: string },
     authUser: BaseUserDto,
   ): Promise<User> {
-    const { password } = data || {};
+    const { oldPassword, newPassword } = data || {};
     const { username: authUsername } = authUser || {};
 
-    if (!password) {
+    if (!oldPassword) {
       throw new HttpException(
         {
-          message: 'Password is required',
+          message: 'Field oldPassword is required',
+          code: PASSWORD_IS_REQUIRED,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (!newPassword) {
+      throw new HttpException(
+        {
+          message: 'Field newPassword is required',
           code: PASSWORD_IS_REQUIRED,
         },
         HttpStatus.BAD_REQUEST,
@@ -308,8 +320,34 @@ export class UserService {
 
     const currentUser = await this.model.findOne({ username: authUsername });
 
+    const currentOldPassword = currentUser.toObject()?.password;
+    const bytes = CryptoJS.AES.decrypt(
+      currentOldPassword,
+      AES_SECRET_KEY_PASSWORD,
+    );
+
+    if (bytes.toString(CryptoJS.enc.Utf8) !== oldPassword) {
+      throw new HttpException(
+        {
+          message: 'Old password is not correct',
+          code: OLD_PASSWORD_IS_NOT_CORRECT,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (newPassword === oldPassword) {
+      throw new HttpException(
+        {
+          message: 'The new password must be different from the old password',
+          code: NEW_PASSWORD_MUST_BE_DIFFERENT_OLD_PASSWORD,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     const encryptPassword = CryptoJS.AES.encrypt(
-      `${password}`,
+      `${newPassword}`,
       AES_SECRET_KEY_PASSWORD,
     ).toString();
 
