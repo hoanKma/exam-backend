@@ -313,7 +313,7 @@ export class UserService {
       AES_SECRET_KEY_PASSWORD,
     ).toString();
 
-    return await this.model
+    await this.model
       .findByIdAndUpdate(
         currentUser._id,
         {
@@ -324,6 +324,8 @@ export class UserService {
         { new: true },
       )
       .exec();
+
+    return null;
   }
 
   async create(
