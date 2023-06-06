@@ -53,6 +53,12 @@ export class UserController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  async changePassword(@Body() data: { password: string }, @Request() req) {
+    return await this.service.changePassword(data, req.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   async update(
     @Param('id') id: string,

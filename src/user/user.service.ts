@@ -289,6 +289,43 @@ export class UserService {
       });
   }
 
+  async changePassword(
+    data: { password: string },
+    authUser: BaseUserDto,
+  ): Promise<User> {
+    const { password } = data || {};
+    const { username: authUsername } = authUser || {};
+
+    if (!password) {
+      throw new HttpException(
+        {
+          message: 'Password is required',
+          code: PASSWORD_IS_REQUIRED,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const currentUser = await this.model.findOne({ username: authUsername });
+
+    const encryptPassword = CryptoJS.AES.encrypt(
+      `${password}`,
+      AES_SECRET_KEY_PASSWORD,
+    ).toString();
+
+    return await this.model
+      .findByIdAndUpdate(
+        currentUser._id,
+        {
+          ...currentUser.toObject(),
+          updatedAt: dayjs().valueOf(),
+          password: encryptPassword,
+        },
+        { new: true },
+      )
+      .exec();
+  }
+
   async create(
     createUserDto: CreateUserDto,
     authUser: BaseUserDto,
